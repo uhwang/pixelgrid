@@ -1,9 +1,9 @@
 '''
-pxlgridgui.py
 
-grapher paper generator
+pxlgrid_savedgui.py
 
 8/13/23
+
 '''
 import sys
 import os
@@ -180,6 +180,10 @@ class QPixelGrid(QWidget):
         self.select_all_dev_btn    = QPushButton("All")
         self.select_all_dev_btn.clicked.connect(self.select_all_dev)
         
+        #row += 1
+        #dev_layout.addWidget(self.select_vector_dev_btn, row, 0)
+        #dev_layout.addWidget(self.select_image_dev_btn , row, 1)
+        #dev_layout.addWidget(self.select_all_dev_btn   , row, 2)
         dev_btn = QHBoxLayout()
         dev_btn.addWidget(self.select_vector_dev_btn)
         dev_btn.addWidget(self.select_image_dev_btn)
@@ -200,7 +204,7 @@ class QPixelGrid(QWidget):
         self.form_layout.addRow(option)
         
         self.setLayout(self.form_layout)
-        self.setWindowTitle("Pixel grid_save")
+        self.setWindowTitle("PixelGrid")
         self.setWindowIcon(QIcon(QPixmap(icon_pxlgrid.table)))
         self.show()
 
@@ -251,8 +255,11 @@ class QPixelGrid(QWidget):
             self.line_color.setText("%d,%d,%d"%(r,g,b))
             
     def create_pixelgrid(self):
-    
+        from pathlib import Path
+        
+        cwd = Path.cwd()
         fn = self.save_file.text()
+
         m_left   = self.paper_margin_left.value()
         m_top    = self.paper_margin_top.value()
         m_right  = self.paper_margin_right.value()
@@ -281,29 +288,34 @@ class QPixelGrid(QWidget):
             self.dev_check_list[key] = value.isChecked()
         
         for key, value in self.dev_check_list.items():
-            #print(key, value)
             if key == vgl.devutil._dev_img and value:
-                dev = vgl.DeviceIMG("%s.png"%fn, gbbox, 300)
+                out_file = str(Path.joinpath(cwd, "%s.png"%fn))
+                dev = vgl.DeviceIMG(out_file, gbbox, 300)
                 dev.set_device(frm)
                 print_pixelgrid(dev, m_left, m_top, f_wid, f_hgt, lcol, lthk, lpat, pxl_size)
             if key == vgl.devutil._dev_wmf and value:
-                dev = vgl.DeviceWMF("%s.wmf"%fn, gbbox)  
+                out_file = str(Path.joinpath(cwd, "%s.wmf"%fn))
+                dev = vgl.DeviceWMF(out_file, gbbox)  
                 dev.set_device(frm)
                 print_pixelgrid(dev, m_left, m_top, f_wid, f_hgt, lcol, lthk, lpat, pxl_size)
             if key == vgl.devutil._dev_emf and value:
-                dev = vgl.DeviceEMF("%s.emf"%fn, gbbox) 
+                out_file = str(Path.joinpath(cwd, "%s.emf"%fn))
+                dev = vgl.DeviceEMF(out_file, gbbox) 
                 dev.set_device(frm)
                 print_pixelgrid(dev, m_left, m_top, f_wid, f_hgt, lcol, lthk, lpat, pxl_size)
             if key == vgl.devutil._dev_pdf and value:
-                dev = vgl.DevicePDF("%s.pdf"%fn, gbbox)  
+                out_file = str(Path.joinpath(cwd, "%s.pdf"%fn))
+                dev = vgl.DevicePDF(out_file, gbbox)  
                 dev.set_device(frm)
                 print_pixelgrid(dev, m_left, m_top, f_wid, f_hgt, lcol, lthk, lpat, pxl_size)
             if key == vgl.devutil._dev_svg and value:
-                dev = vgl.DeviceSVG("%s.svg"%fn, gbbox, 300)    
+                out_file = str(Path.joinpath(cwd, "%s.svg"%fn))
+                dev = vgl.DeviceSVG(out_file, gbbox, 300)    
                 dev.set_device(frm)
                 print_pixelgrid(dev, m_left, m_top, f_wid, f_hgt, lcol, lthk, lpat, pxl_size)
             if key == vgl.devutil._dev_ppt and value:
-                dev = vgl.DevicePPT("%s.ppt"%fn, gbbox)  
+                out_file = str(Path.joinpath(cwd, "%s.ppt"%fn))
+                dev = vgl.DevicePPT(out_file, gbbox)  
                 dev.set_device(frm)
                 print_pixelgrid(dev, m_left, m_top, f_wid, f_hgt, lcol, lthk, lpat, pxl_size)
   
