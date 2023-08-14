@@ -5,5 +5,5 @@ Graph Paper Generator w/ vgl
 
 A frame is on a paper, but invisible. A frame width is paper width - left margin - right margin. A frame height is paper height - top margin - bottom margin. Pixel size, line thickness, and pattern length are the percentage of a height of the frame. Length (pattern length) is applied when line pattern type was selected except SOLID. 
 
-Warning
+**Warning** __Strong__
 Patterned line can cause the big file size of PDF. Every single piece of line segment is a single stream data, so the file size get much bigger than solid line. 
