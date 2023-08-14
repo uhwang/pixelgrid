@@ -2,3 +2,5 @@
 
 # pixelgrid
 Graph Paper Generator w/ vgl
+
+A frame is on a paper, but invisible. A frame width is paper width - left margin - right margin. A frame height is paper height - top margin - bottom margin. Pixel size and line thickness are the percentage of a height of the frame.
