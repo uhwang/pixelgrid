@@ -1,9 +1,9 @@
 '''
+pxlgridgui.py
 
-pxlgrid_savedgui.py
+grapher paper generator
 
 8/13/23
-
 '''
 import sys
 import os
