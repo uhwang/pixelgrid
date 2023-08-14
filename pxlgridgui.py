@@ -38,29 +38,37 @@ from PyQt5.QtWidgets import ( QApplication,
                               QGroupBox,
                               QTreeWidget,
                               QTreeWidgetItem,
-                              QColorDialog)
+                              QColorDialog,
+                              QDoubleSpinBox)
 
 
 import vgl
-
+from math import fabs
 from icons import icon_folder_open, icon_pxlgrid, icon_color_picker
 
 def print_pixelgrid(dev, m_left, m_top, f_wid, f_hgt, lcol, lthk, lpat, pxl_size):
-    # w(in)   h(in)     w(mm)       h(mm)
  
-    grid_save_dx = pxl_size
-    grid_save_dy = pxl_size
+    limit = 10e-5
+    unit_pixel = pxl_size * dev.frm.hgt()
+    ex = m_left + int(f_wid/unit_pixel)*unit_pixel
+    ey = m_top  + int(f_hgt/unit_pixel)*unit_pixel
+    
     sy = m_top
-    ex,ey = m_left+f_wid, m_top+f_hgt
     while sy <= ey:
         dev.lline(m_left, sy, ex, sy, lcol, lthk, lpat)
-        sy += grid_save_dy
+        sy += unit_pixel
+
+    if sy != ey and fabs(sy-ey) < limit:
+        dev.lline(m_left, ey, ex, ey, lcol, lthk, lpat)
         
     sx = m_left
     while sx <= ex:
         dev.lline(sx, m_top, sx, ey, lcol, lthk, lpat)
-        sx += grid_save_dx
-    dev.delete_pen()
+        sx += unit_pixel
+
+    if sx != ex and fabs(sx-ex) < limit:
+        dev.lline(ex, m_top, ex, ey, lcol, lthk, lpat)
+        
     dev.close()
 
 class QPixelGrid(QWidget):
@@ -97,28 +105,32 @@ class QPixelGrid(QWidget):
         paper.addWidget(QLabel("Right") , 5, 0)
         paper.addWidget(QLabel("Bottom"), 6, 0)
         
-        self.paper_margin_left   = QLineEdit("0.5")
-        self.paper_margin_top    = QLineEdit("0.5")
-        self.paper_margin_right  = QLineEdit("0.5")
-        self.paper_margin_bottom = QLineEdit("0.5")
+        self.paper_margin_left   = QDoubleSpinBox(minimum=0.0, value=0.5, suffix=' inch')
+        self.paper_margin_top    = QDoubleSpinBox(minimum=0.0, value=0.5, suffix=' inch')
+        self.paper_margin_right  = QDoubleSpinBox(minimum=0.0, value=0.5, suffix=' inch')
+        self.paper_margin_bottom = QDoubleSpinBox(minimum=0.0, value=0.5, suffix=' inch')
+
+        self.paper_margin_left  .setSingleStep(0.1)
+        self.paper_margin_top   .setSingleStep(0.1)
+        self.paper_margin_right .setSingleStep(0.1)
+        self.paper_margin_bottom.setSingleStep(0.1)
 
         paper.addWidget(self.paper_margin_left  , 3, 1)
         paper.addWidget(self.paper_margin_top   , 4, 1)
         paper.addWidget(self.paper_margin_right , 5, 1)
         paper.addWidget(self.paper_margin_bottom, 6, 1)
         
-        paper.addWidget(QLabel("inch"), 3, 2)
-        paper.addWidget(QLabel("inch"), 4, 2)
-        paper.addWidget(QLabel("inch"), 5, 2)
-        paper.addWidget(QLabel("inch"), 6, 2)
-
-        self.pixel_size = QLineEdit("0.1")
         paper.addWidget(QLabel("Pxl size"), 7,0)
+        self.pixel_size = QDoubleSpinBox(minimum=0.001, value=0.012, suffix=' %')
+        self.pixel_size.setDecimals(3)
+        self.pixel_size.setSingleStep(0.001)
+        self.pixel_size.setValue(0.012)
         paper.addWidget(self.pixel_size, 7,1)
-        paper.addWidget(QLabel("%"), 7,2)
         
         paper.addWidget(QLabel("LThk"), 8,0)
-        self.line_thickness = QLineEdit("0.003")
+        self.line_thickness = QDoubleSpinBox(minimum=0.001, value=0.003, suffix=' %')
+        self.line_thickness.setSingleStep(0.001)
+        self.line_thickness.setDecimals(3)
         paper.addWidget(self.line_thickness, 8,1)
         
         paper.addWidget(QLabel("LCol"), 9,0)
@@ -139,7 +151,8 @@ class QPixelGrid(QWidget):
         self.line_pattern.addItems(vgl.get_pattern_names())
         line_type.addWidget(self.line_pattern, 1,0)
         
-        self.pattern_length = QLineEdit("0.04")
+        self.pattern_length = QDoubleSpinBox(minimum=0.01, value=0.04, suffix=' %')
+        self.pattern_length.setSingleStep(0.01)
         self.save_folder_btn.setToolTip("Percentage of a frame height")
         line_type.addWidget(self.pattern_length, 1,1)
         
@@ -158,18 +171,32 @@ class QPixelGrid(QWidget):
             row = row+1 if i != 0 and i%ncol == 0 else row
             dev_layout.addWidget(checker, row, col)
         
+        self.select_vector_dev_btn = QPushButton("Vect")
+        self.select_vector_dev_btn.clicked.connect(self.select_vector_dev)
+        
+        self.select_image_dev_btn  = QPushButton("Img")
+        self.select_image_dev_btn.clicked.connect(self.select_image_dev)
+        
+        self.select_all_dev_btn    = QPushButton("All")
+        self.select_all_dev_btn.clicked.connect(self.select_all_dev)
+        
+        dev_btn = QHBoxLayout()
+        dev_btn.addWidget(self.select_vector_dev_btn)
+        dev_btn.addWidget(self.select_image_dev_btn)
+        dev_btn.addWidget(self.select_all_dev_btn)
+        t_widget = QWidget()
+        t_widget.setLayout(dev_btn)
+        t_widget.setFixedWidth(200)
+        
         self.create_btn = QPushButton("Create")
         self.create_btn.clicked.connect(self.create_pixelgrid)
-        self.exit_btn = QPushButton("Exit")
-        self.exit_btn.clicked.connect(self.exit_pixelgrid)
-        
         option = QHBoxLayout()
         option.addWidget(self.create_btn)
-        option.addWidget(self.exit_btn)
         
         self.form_layout.addRow(paper)
         self.form_layout.addRow(line_type)
         self.form_layout.addRow(dev_layout)
+        self.form_layout.addRow(t_widget)
         self.form_layout.addRow(option)
         
         self.setLayout(self.form_layout)
@@ -177,6 +204,33 @@ class QPixelGrid(QWidget):
         self.setWindowIcon(QIcon(QPixmap(icon_pxlgrid.table)))
         self.show()
 
+    def select_all_dev(self):
+        for i, dev_name in enumerate(vgl.devutil._dev_list):
+            self.dev_checker[dev_name].setChecked(True)
+            self.dev_check_list[dev_name] = True
+    
+    def select_vector_dev(self):
+        for i, dev_name in enumerate(vgl.devutil._dev_list):
+            if dev_name == vgl.devutil._dev_emf or\
+               dev_name == vgl.devutil._dev_wmf or\
+               dev_name == vgl.devutil._dev_pdf or\
+               dev_name == vgl.devutil._dev_svg or\
+               dev_name == vgl.devutil._dev_ppt:
+                self.dev_checker[dev_name].setChecked(True)
+                self.dev_check_list[dev_name] = True
+            else:
+                self.dev_checker[dev_name].setChecked(False)
+                self.dev_check_list[dev_name] = False
+    
+    def select_image_dev(self):
+         for i, dev_name in enumerate(vgl.devutil._dev_list):
+            if dev_name == vgl.devutil._dev_img:
+                self.dev_checker[dev_name].setChecked(True)
+                self.dev_check_list[dev_name] = True
+            else:
+                self.dev_checker[dev_name].setChecked(False)
+                self.dev_check_list[dev_name] = False
+                
     def get_new_save_folder(self):
         startingDir = os.getcwd() 
         path = QFileDialog.getExistingDirectory(None, 'Save folder', startingDir, 
@@ -187,6 +241,7 @@ class QPixelGrid(QWidget):
     
     def exit_pixelgrid(self):
         pass
+        
     def pick_line_color(self):
         lc = self.line_color.text().split(',')
         col = QColorDialog.getColor(QColor(int(lc[0]), int(lc[1]), int(lc[2])))
@@ -198,11 +253,12 @@ class QPixelGrid(QWidget):
     def create_pixelgrid(self):
     
         fn = self.save_file.text()
-        m_left   = float(self.paper_margin_left.text())
-        m_top    = float(self.paper_margin_top.text())
-        m_right  = float(self.paper_margin_right.text())
-        m_bottom = float(self.paper_margin_bottom.text())
+        m_left   = self.paper_margin_left.value()
+        m_top    = self.paper_margin_top.value()
+        m_right  = self.paper_margin_right.value()
+        m_bottom = self.paper_margin_bottom.value()
         
+        # w(in)   h(in)     w(mm)       h(mm)        
         p_size = vgl.get_paper_size(self.paper_type.currentText())
         p_wid, p_hgt = p_size[0], p_size[1]
         f_wid = p_wid-m_left-m_right
@@ -211,15 +267,15 @@ class QPixelGrid(QWidget):
         fmm = vgl.FrameManager()
         frm = fmm.create(m_left,m_top,f_wid,f_hgt, vgl.Data(-1,1,-1,1))
         gbbox= fmm.get_gbbox()
-        pxl_size = float(self.pixel_size.text())
+        pxl_size = self.pixel_size.value()
         
         lc = self.line_color.text().split(',')
         lcol = vgl.color.Color(int(lc[0]), int(lc[1]), int(lc[2]))
-        lthk = float(self.line_thickness.text())
+        lthk = self.line_thickness.value()
         lpat_= self.line_pattern.currentText()
         lpat = vgl.linepat._PAT_SOLID\
                if lpat_ == vgl.linepat._PAT_SOLID\
-               else vgl.linepat.LinePattern(float(self.pattern_length.text()), lpat_)
+               else vgl.linepat.LinePattern(self.pattern_length.value(), lpat_)
         
         for key, value in self.dev_checker.items():
             self.dev_check_list[key] = value.isChecked()
